@@ -158,6 +158,16 @@ private:
     //  Low-Boiling
     juce::AudioParameterFloat* lbBPCutoff;
     juce::AudioParameterFloat* lbBPQ;
+    juce::AudioParameterFloat* lbRandomModulateAmplitude;
+    juce::AudioParameterFloat* lbRandomModulateFrequency;
+
+    juce::AudioParameterFloat* lbRngBPOscFrequency;
+    juce::AudioParameterFloat* lbRngBPOscAmplitude;
+    juce::AudioParameterFloat* lbRngBPCenterFrequency;
+    juce::AudioParameterFloat* lbRngBPQ;
+
+    juce::dsp::Oscillator<float> lbRMOsc;
+    juce::dsp::Oscillator<float> lbRngBPOsc;
 
     // Distant Wind Parameters
     juce::AudioParameterFloat* dstAmplitude;
@@ -177,8 +187,7 @@ private:
     // Howl DSP Resources
     juce::dsp::StateVariableTPTFilter<float> howlBPF1;
     juce::dsp::StateVariableTPTFilter<float> howlBPF2;
-    juce::dsp::Oscillator<float> howlOsc1;
-    juce::dsp::Oscillator<float> howlOsc2;
+    
     BlockLPF howlBlockLPF1;
     BlockLPF howlBlockLPF2;
 

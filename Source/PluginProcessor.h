@@ -31,6 +31,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "PinkNoise.h"
 
 //==============================================================================
 /**
@@ -148,7 +149,8 @@ private:
 
     //  Wind Methods
     void Prepare(const juce::dsp::ProcessSpec& spec);
-    void dstProcess(juce::AudioBuffer<float>& buffer);
+    void midBoilProcess(juce::AudioBuffer<float>& buffer);
+    void lowBoilProcess(juce::AudioBuffer<float>& buffer);
     void updateSettings();
     void cosPan(float* output, float pan);  
 
@@ -166,17 +168,20 @@ private:
     juce::AudioParameterFloat* mbRngBPCenterFrequency;
     juce::AudioParameterFloat* mbRngBPQ;
 
-    juce::dsp::Oscillator<float> mbRngBPOsc;
+
+    // Low-Boiling
 
     // Distant Wind Parameters
     juce::AudioParameterFloat* dstAmplitude;
     juce::AudioParameterFloat* dstPan;
 
 
-    //  Low-Boiling Component
+    //  Boiling Component
     juce::Random r;
+    PinkNoise pr;
     juce::dsp::StateVariableTPTFilter<float> mbBPF;
     juce::dsp::StateVariableTPTFilter<float> mbRngBPF;
+    juce::dsp::Oscillator<float> mbRngBPOsc;
     juce::dsp::Oscillator<float> lbLFO;
 
     // Whistle DSP Resources

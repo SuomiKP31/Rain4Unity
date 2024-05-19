@@ -94,7 +94,8 @@ void Rain4UnityAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     buffer.clear();
 
     updateSettings();
-    dstProcess(buffer);
+    midBoilProcess(buffer);
+    lowBoilProcess(buffer);
 
     buffer.applyGain(gain->get());
     
@@ -155,7 +156,7 @@ void Rain4UnityAudioProcessor::Prepare(const juce::dsp::ProcessSpec& spec)
     howlBlockLPF2.prepare(0.4f, spec.maximumBlockSize, spec.sampleRate);
 }
 
-void Rain4UnityAudioProcessor::dstProcess(juce::AudioBuffer<float>& buffer)
+void Rain4UnityAudioProcessor::midBoilProcess(juce::AudioBuffer<float>& buffer)
 {
     //    Get Buffer info
     int numSamples = buffer.getNumSamples();
@@ -171,13 +172,12 @@ void Rain4UnityAudioProcessor::dstProcess(juce::AudioBuffer<float>& buffer)
     float freqband = mbRngBPOscAmplitude->get();
     mbRngBPF.setCutoffFrequency(std::clamp(mbRngBPOsc.processSample(r.nextFloat() * 2.0f - 1.0f) * freqband + centerFreq, 25.f, 20000.0f));
 
-    //float pan[2];
-    //cosPan(pan, dstPan->get());
 
     for (int s = 0; s < numSamples; ++s)
     {
         float output = mbBPF.processSample(0, r.nextFloat() * 2.0f - 1.0f) * FrameAmp;
         output = mbRngBPF.processSample(0, output);
+        
         buffer.addSample(0, s, output); 
         buffer.addSample(1, s, output);
     }
@@ -188,8 +188,20 @@ void Rain4UnityAudioProcessor::dstProcess(juce::AudioBuffer<float>& buffer)
     mbRngBPF.snapToZero();
 }
 
+void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
+{
+    int numSamples = buffer.getNumSamples();
+    float FrameAmp = dstAmplitude->get();
 
+    for (int s = 0; s < numSamples; ++s)
+    {
+        float output = FrameAmp * (pr.nextFloat() * 2.0f - 1.0f);
 
+        buffer.addSample(0, s, output);
+        buffer.addSample(1, s, output);
+    }
+
+}
 
 void Rain4UnityAudioProcessor::updateSettings()
 {

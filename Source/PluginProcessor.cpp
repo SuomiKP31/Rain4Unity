@@ -40,15 +40,14 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     //    Global Parameters
     addParameter(gain = new juce::AudioParameterFloat(
         "Master Gain", "Master Gain", 0.0f, 1.0f, 0.5f));
+    //    Low Boiling
+    addParameter(lbBPCutoff = new juce::AudioParameterFloat(
+        "LBCutOff", "LB Cutoff", 15.f, 10000.f, 4000.0f));
+    addParameter(lbBPQ = new juce::AudioParameterFloat(
+        "LBQ", "LB Q Factor", 0.1f, 15.f, 2.6f));
     //  Wind Speed Parameters
     addParameter(dstAmplitude = new juce::AudioParameterFloat(
         "DstAmp", "Distant Gain", 0.0001f, 1.5f, 0.75f));
-    addParameter(windSpeed = new juce::AudioParameterFloat(
-        "windSpeed", "Wind Speed", 0.01f, 40.0f, 1.0f));
-    addParameter(dstIntensity = new juce::AudioParameterFloat(
-        "intensity", "dst Intensity", 1.0f, 50.0f, 30.0f));
-    addParameter(dstResonance = new juce::AudioParameterFloat(
-        "dstResonance", "dst Resonance", 0.1f, 50.0f, 1.0f));
     addParameter(dstPan = new juce::AudioParameterFloat(
         "dstPan", "Distant Pan", 0.0f, 1.0f, 0.5f));
 }
@@ -104,18 +103,19 @@ juce::AudioProcessorEditor* Rain4UnityAudioProcessor::createEditor()
 void Rain4UnityAudioProcessor::Prepare(const juce::dsp::ProcessSpec& spec)
 {
     //    Prepare DST
-    dstBPF.prepare(spec);
-    dstBPF.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
-    dstBPF.setCutoffFrequency(10.0f);
-    dstBPF.setResonance(1.0f);
-    dstBPF.reset();
+    lbBPF.prepare(spec);
+    lbBPF.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
+    lbBPF.setCutoffFrequency(10.0f);
+    lbBPF.setResonance(1.0f);
+    lbBPF.reset();
 
-    //    Prepare Whistle
-    whsBPF1.prepare(spec);
-    whsBPF1.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
-    whsBPF1.setCutoffFrequency(1000.0f);
-    whsBPF1.setResonance(60.0f);
-    whsBPF1.reset();
+    lbRngBPF.prepare(spec);
+    lbRngBPF.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
+    lbRngBPF.setCutoffFrequency(1000.0f);
+    lbRngBPF.setResonance(60.0f);
+    lbRngBPF.reset();
+
+    lbLFO.initialise([](float x) { return std::sin(x); }, 128);
 
     whsBPF2.prepare(spec);
     whsBPF2.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
@@ -155,12 +155,12 @@ void Rain4UnityAudioProcessor::dstProcess(juce::AudioBuffer<float>& buffer)
 
     for (int s = 0; s < numSamples; ++s)
     {
-        float output = dstBPF.processSample(0, r.nextFloat() * 2.0f - 1.0f) * FrameAmp;
+        float output = lbBPF.processSample(0, r.nextFloat() * 2.0f - 1.0f) * FrameAmp;
         buffer.addSample(0, s, output * pan[0]);
         buffer.addSample(1, s, output * pan[1]);
     }
   
-    dstBPF.snapToZero();
+    lbBPF.snapToZero();
 }
 
 
@@ -170,38 +170,17 @@ void Rain4UnityAudioProcessor::updateSettings()
 {
     //  UpdateWSCircularBuffer;
 
-    float currentWindSpeed = windSpeed->get();
-    gd.windSpeedCircularBuffer[gd.wSCBWriteIndex] = currentWindSpeed;
-    ++gd.wSCBWriteIndex;
-    gd.wSCBWriteIndex = (gd.wSCBWriteIndex < wSCBSize) ? gd.wSCBWriteIndex : 0;
+    float currentLBCutoff = lbBPCutoff->get();
+    float currentDstResonance = lbBPQ->get();
+    //gd.windSpeedCircularBuffer[gd.wSCBWriteIndex] = currentWindSpeed;
+    //++gd.wSCBWriteIndex;
+    //gd.wSCBWriteIndex = (gd.wSCBWriteIndex < wSCBSize) ? gd.wSCBWriteIndex : 0;
 
-
-    // Update DST
-    float currentDstIntensity = dstIntensity->get();
-    float currentDstResonance = dstResonance->get();
+    
 
     // Update DST Filter Settings
-    dstBPF.setCutoffFrequency(currentWindSpeed * currentDstIntensity);
-    dstBPF.setResonance(currentDstResonance);
-
-    /*// Update Whistle
-    
-    wd.whsWSCBReadIndex1 = gd.wSCBWriteIndex - (int)(pd.whistlePan1 * maxPanFrames);
-    wd.whsWSCBReadIndex1 = (wd.whsWSCBReadIndex1 < 0) ? wd.whsWSCBReadIndex1 + wSCBSize : wd.whsWSCBReadIndex1;
-    wd.whsWSCBReadIndex2 = gd.wSCBWriteIndex - (int)(pd.whistlePan2 * maxPanFrames);
-    wd.whsWSCBReadIndex2 = (wd.whsWSCBReadIndex2 < 0) ? wd.whsWSCBReadIndex2 + wSCBSize : wd.whsWSCBReadIndex2;
-    wd.whsWindSpeed1 = gd.windSpeedCircularBuffer[wd.whsWSCBReadIndex1];
-    wd.whsWindSpeed2 = gd.windSpeedCircularBuffer[wd.whsWSCBReadIndex2];
-    whsBPF1.setCutoffFrequency(wd.whsWindSpeed1 * 8.0f + 600.0f);
-    whsBPF2.setCutoffFrequency(wd.whsWindSpeed2 * 20.0f + 1000.0f);
-
-    //    Update Howl
-    hd.howlWSCBReadIndex1 = gd.wSCBWriteIndex - (int)(pd.howlPan1 * maxPanFrames);
-    hd.howlWSCBReadIndex1 = (hd.howlWSCBReadIndex1 < 0) ? hd.howlWSCBReadIndex1 + wSCBSize : hd.howlWSCBReadIndex1;
-    hd.howlWSCBReadIndex2 = gd.wSCBWriteIndex - (int)(pd.howlPan2 * maxPanFrames);
-    hd.howlWSCBReadIndex2 = (hd.howlWSCBReadIndex2 < 0) ? hd.howlWSCBReadIndex2 + wSCBSize : hd.howlWSCBReadIndex2;
-    hd.howlWindSpeed1 = gd.windSpeedCircularBuffer[hd.howlWSCBReadIndex1];
-    hd.howlWindSpeed2 = gd.windSpeedCircularBuffer[hd.howlWSCBReadIndex2];*/
+    lbBPF.setCutoffFrequency(currentLBCutoff);
+    lbBPF.setResonance(currentDstResonance);
 }
 
 void Rain4UnityAudioProcessor::cosPan(float* output, float pan)

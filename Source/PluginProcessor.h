@@ -155,22 +155,23 @@ private:
     //  Global Parameters
     juce::AudioParameterFloat* gain;
 
-    //  Wind Speed Parameters
-    juce::AudioParameterFloat* windSpeed;
+    //  Low-Boiling
+    juce::AudioParameterFloat* lbBPCutoff;
+    juce::AudioParameterFloat* lbBPQ;
 
     // Distant Wind Parameters
     juce::AudioParameterFloat* dstAmplitude;
-    juce::AudioParameterFloat* dstIntensity;
-    juce::AudioParameterFloat* dstResonance;
     juce::AudioParameterFloat* dstPan;
 
 
-    //  Distant Wind DSP Resources
+    //  Low-Boiling Component
     juce::Random r;
-    juce::dsp::StateVariableTPTFilter<float> dstBPF;
+    juce::dsp::StateVariableTPTFilter<float> lbBPF;
+    juce::dsp::StateVariableTPTFilter<float> lbRngBPF;
+    juce::dsp::Oscillator<float> lbLFO;
 
     // Whistle DSP Resources
-    juce::dsp::StateVariableTPTFilter<float> whsBPF1;
+    
     juce::dsp::StateVariableTPTFilter<float> whsBPF2;
 
     // Howl DSP Resources

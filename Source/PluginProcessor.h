@@ -155,19 +155,18 @@ private:
     //  Global Parameters
     juce::AudioParameterFloat* gain;
 
-    //  Low-Boiling
-    juce::AudioParameterFloat* lbBPCutoff;
-    juce::AudioParameterFloat* lbBPQ;
-    juce::AudioParameterFloat* lbRandomModulateAmplitude;
-    juce::AudioParameterFloat* lbRandomModulateFrequency;
+    //  Mid-Boiling
+    juce::AudioParameterFloat* mbBPCutoff;
+    juce::AudioParameterFloat* mbBPQ;
+    juce::AudioParameterFloat* mbRandomModulateAmplitude;
+    juce::AudioParameterFloat* mbRandomModulateFrequency;
 
-    juce::AudioParameterFloat* lbRngBPOscFrequency;
-    juce::AudioParameterFloat* lbRngBPOscAmplitude;
-    juce::AudioParameterFloat* lbRngBPCenterFrequency;
-    juce::AudioParameterFloat* lbRngBPQ;
+    juce::AudioParameterFloat* mbRngBPOscFrequency;
+    juce::AudioParameterFloat* mbRngBPOscAmplitude;
+    juce::AudioParameterFloat* mbRngBPCenterFrequency;
+    juce::AudioParameterFloat* mbRngBPQ;
 
-    juce::dsp::Oscillator<float> lbRMOsc;
-    juce::dsp::Oscillator<float> lbRngBPOsc;
+    juce::dsp::Oscillator<float> mbRngBPOsc;
 
     // Distant Wind Parameters
     juce::AudioParameterFloat* dstAmplitude;
@@ -176,8 +175,8 @@ private:
 
     //  Low-Boiling Component
     juce::Random r;
-    juce::dsp::StateVariableTPTFilter<float> lbBPF;
-    juce::dsp::StateVariableTPTFilter<float> lbRngBPF;
+    juce::dsp::StateVariableTPTFilter<float> mbBPF;
+    juce::dsp::StateVariableTPTFilter<float> mbRngBPF;
     juce::dsp::Oscillator<float> lbLFO;
 
     // Whistle DSP Resources

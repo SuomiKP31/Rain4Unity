@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="HDQsAy" name="Rain4Unity" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
+              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
+              pluginFormats="buildStandalone,buildUnity,buildVST3">
   <MAINGROUP id="EZz4g6" name="Rain4Unity">
     <GROUP id="{E0F222AE-74FE-3795-B190-7E33FF4BB664}" name="Source">
+      <FILE id="tCoXjO" name="PinkNoise.cpp" compile="1" resource="0" file="Source/PinkNoise.cpp"/>
+      <FILE id="h2axRd" name="PinkNoise.h" compile="0" resource="0" file="Source/PinkNoise.h"/>
       <FILE id="Aud4CN" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="b70Sn0" name="PluginProcessor.h" compile="0" resource="0"

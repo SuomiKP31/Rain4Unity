@@ -40,23 +40,30 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     //    Global Parameters
     addParameter(gain = new juce::AudioParameterFloat(
         "Master Gain", "Master Gain", 0.0f, 1.0f, 0.5f));
+
+    addParameter(mbGain = new juce::AudioParameterFloat(
+        "MB Gain", "Mid Boiling Gain", 0.0001f, 1.0f, 0.3f));
+    addParameter(lbGain = new juce::AudioParameterFloat(
+        "LB Gain", "Low Boiling Gain", 0.0001f, 1.0f, 0.45f));
+    addParameter(stGain = new juce::AudioParameterFloat(
+        "Stereo Gain", "Stereo Gain", 0.0001f, 1.0f, 0.25f));
+
     //    Mid Boiling
     addParameter(mbBPCutoff = new juce::AudioParameterFloat(
-        "MBCutOff", "MB Bandpass Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 2341.0f));
+        "MBCutOff", "MB Bandpass Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 500.0f));
     addParameter(mbBPQ = new juce::AudioParameterFloat(
-        "MBQ", "MB Bandpass QFactor", 0.1f, 15.f, 2.4f));
+        "MBQ", "MB Bandpass QFactor", 0.1f, 15.f, 2.75f));
     addParameter(mbRandomModulateAmplitude = new juce::AudioParameterFloat(
-        "MBRM Amp", "MBRM Amp(dB)", 0.f, 24.f, 9.0f));
+        "MBRM Amp", "MBRM Amp(dB)", 0.f, 24.f, 7.0f));
     addParameter(mbRngBPOscAmplitude = new juce::AudioParameterFloat(
-        "MBRNGFreqBand", "MBRng BPF Freq Band", 100.f, 500.f, 435.0f));
+        "MBRNGFreqBand", "MBRng BPF Freq Band", 100.f, 500.f, 365.0f));
     addParameter(mbRngBPCenterFrequency = new juce::AudioParameterFloat(
-        "MBRNGCenterFreq", "MBRng BPF Center Freq", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 666.0f));
+        "MBRNGCenterFreq", "MBRng BPF Center Freq", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 940.0f));
     addParameter(mbRngBPOscFrequency = new juce::AudioParameterFloat(
-        "MBRNGOscFrequency", "MBRng Osc Frequency", 1.f, 100.f, 2.0f));
+        "MBRNGOscFrequency", "MBRng Osc Frequency", 1.f, 100.f, 4.0f));
     addParameter(mbRngBPQ = new juce::AudioParameterFloat(
-        "MBRng Q", "MBRng BP QFactor", 0.1f, 15.f, 9.0f));
-    addParameter(mbGain = new juce::AudioParameterFloat(
-        "DstAmp", "Mid Boiling Gain", 0.0001f, 1.0f, 0.35f));
+        "MBRng Q", "MBRng BP QFactor", 0.1f, 15.f, 7.5f));
+
 
     // Low Boiling
     addParameter(lbRngBPOscAmplitude = new juce::AudioParameterFloat(
@@ -67,21 +74,19 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
         "LBRNGOscFrequency", "LBRng Osc Frequency", 1.f, 100.f, 30.0f));
     addParameter(lbRngBPQ = new juce::AudioParameterFloat(
         "LBRng Q", "LBRng BP QFactor", 0.1f, 15.f, 1.4f));
-    addParameter(lbGain = new juce::AudioParameterFloat(
-        "DstAmp", "Low Boiling Gain", 0.0001f, 1.0f, 0.6f));
     addParameter(lbLPFCutoff = new juce::AudioParameterFloat(
         "LBLPFCutoff", "LBLPF Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 3500.0f));
     addParameter(lbHPFCutoff = new juce::AudioParameterFloat(
         "LBHPFCutoff", "LBHPF Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 750.0f));
 
+    // Stereo
     addParameter(stLPFCutoff = new juce::AudioParameterFloat(
         "Stereo LPF", "StereoLPF", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 2750.0f));
     addParameter(stHPFCutoff = new juce::AudioParameterFloat(
         "Stereo HPF", "StereoHPF", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 800.0f));
     addParameter(stPeakFreq = new juce::AudioParameterFloat(
         "Stereo Peak", "Stereo Peak", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 1000.0f));
-    addParameter(stGain = new juce::AudioParameterFloat(
-        "Stereo Gain", "Stereo Gain", 0.0001f, 1.0f, 0.25f));
+
     /*addParameter(dstPan = new juce::AudioParameterFloat(
         "dstPan", "Distant Pan", 0.0f, 1.0f, 0.5f));*/
 }

@@ -56,7 +56,7 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     addParameter(mbRngBPQ = new juce::AudioParameterFloat(
         "MBRng Q", "MBRng BP QFactor", 0.1f, 15.f, 9.0f));
     addParameter(mbGain = new juce::AudioParameterFloat(
-        "DstAmp", "Mid Boiling Gain", 0.0001f, 1.5f, 0.35f));
+        "DstAmp", "Mid Boiling Gain", 0.0001f, 1.0f, 0.35f));
 
     // Low Boiling
     addParameter(lbRngBPOscAmplitude = new juce::AudioParameterFloat(
@@ -68,7 +68,7 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     addParameter(lbRngBPQ = new juce::AudioParameterFloat(
         "LBRng Q", "LBRng BP QFactor", 0.1f, 15.f, 1.4f));
     addParameter(lbGain = new juce::AudioParameterFloat(
-        "DstAmp", "Low Boiling Gain", 0.0001f, 1.5f, 0.6f));
+        "DstAmp", "Low Boiling Gain", 0.0001f, 1.0f, 0.6f));
     addParameter(lbLPFCutoff = new juce::AudioParameterFloat(
         "LBLPFCutoff", "LBLPF Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 3500.0f));
     addParameter(lbHPFCutoff = new juce::AudioParameterFloat(
@@ -80,6 +80,8 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
         "Stereo HPF", "StereoHPF", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 800.0f));
     addParameter(stPeakFreq = new juce::AudioParameterFloat(
         "Stereo Peak", "Stereo Peak", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 1000.0f));
+    addParameter(stGain = new juce::AudioParameterFloat(
+        "Stereo Gain", "Stereo Gain", 0.0001f, 1.0f, 0.25f));
     /*addParameter(dstPan = new juce::AudioParameterFloat(
         "dstPan", "Distant Pan", 0.0f, 1.0f, 0.5f));*/
 }
@@ -124,7 +126,7 @@ void Rain4UnityAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     midBoilProcess(buffer);
     lowBoilProcess(buffer);
-    
+    stereoBoilProcess(buffer);
 
     buffer.applyGain(gain->get());
     
@@ -246,7 +248,7 @@ void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
 
     for (int s = 0; s < numSamples; ++s)
     {
-        float output = pr.nextFloat();
+        float output = pr.nextFloat() * 2.0f - 1.0f;
         output = lbRngBPF.processSample(0, output);
         tempBuffer.addSample(0, s, output);
         tempBuffer.addSample(1, s, output);
@@ -273,6 +275,41 @@ void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
     lbHPF.snapToZero();
     lbRngBPF.snapToZero();
 }
+
+void Rain4UnityAudioProcessor::stereoBoilProcess(juce::AudioBuffer<float>& buffer)
+{
+    tempBuffer.clear();
+    float currentSTGain = stGain->get();
+    int numSamples = buffer.getNumSamples();
+
+    float panL1[2], panR1[2];
+    float outputL1,outputR1;
+
+    // Hard Pan
+    cosPan(panL1, 0.f);
+    cosPan(panR1, 1.0f);
+
+    // Stereo Pink noises & Filtering (3 Layers)
+    // NOTE: Multiple layers are a bit overkill. I can't make out any difference so I just left one pink noise generator.
+    for (int s = 0; s < numSamples; ++s)
+    {
+        outputL1 = stereoPnL1.nextFloat();
+        stProcessSample(0, outputL1);
+        outputR1 = stereoPnR1.nextFloat();
+        stProcessSample(1, outputR1);
+        tempBuffer.setSample(0, s, outputL1 * panL1[0] + outputR1 * panR1[0]);
+        tempBuffer.setSample(1, s, outputL1 * panL1[1] + outputR1 * panR1[1]);
+    }
+
+    tempBuffer.applyGain(currentSTGain);
+    buffer.addFrom(0, 0, tempBuffer, 0, 0, numSamples, 1-currentSTGain);
+    buffer.addFrom(1, 0, tempBuffer, 1, 0, numSamples, 1-currentSTGain);
+
+    stLPF.snapToZero();
+    stHPF.snapToZero();
+    stPeakF.snapToZero();
+}
+
 
 void Rain4UnityAudioProcessor::updateSettings()
 {
@@ -305,7 +342,7 @@ void Rain4UnityAudioProcessor::updateSettings()
 
     stLPF.setCutoffFrequency(currentSTLPFCutoff);
     stHPF.setCutoffFrequency(currentSTHPFCutoff);
-    stPeakF.coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), currentSTPeakFreq, 1, 0);
+    stPeakF.coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), currentSTPeakFreq, 1, 1);
     
 }
 
@@ -313,6 +350,13 @@ void Rain4UnityAudioProcessor::cosPan(float* output, float pan)
 {
     output[0] = juce::dsp::FastMathApproximations::cos((pan * 0.25f - 0.5f) * juce::MathConstants<float>::twoPi);
     output[1] = juce::dsp::FastMathApproximations::cos((pan * 0.25f - 0.25f) * juce::MathConstants<float>::twoPi);
+}
+
+void Rain4UnityAudioProcessor::stProcessSample(int channel, float& sample)
+{
+    sample = stPeakF.processSample(sample);
+    sample = stLPF.processSample(channel, sample);
+    sample = stHPF.processSample(channel, sample);
 }
 
 //==============================================================================

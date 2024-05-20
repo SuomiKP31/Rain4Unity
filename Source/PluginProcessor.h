@@ -153,7 +153,8 @@ private:
     void lowBoilProcess(juce::AudioBuffer<float>& buffer);
     void stereoBoilProcess(juce::AudioBuffer<float>& buffer);
     void updateSettings();
-    void cosPan(float* output, float pan);  
+    void cosPan(float* output, float pan);
+    void stProcessSample(int channel, float& sample);
 
     //  Global Parameters
     juce::AudioParameterFloat* gain;
@@ -184,6 +185,7 @@ private:
     juce::AudioParameterFloat* stLPFCutoff;
     juce::AudioParameterFloat* stHPFCutoff;
     juce::AudioParameterFloat* stPeakFreq;
+    juce::AudioParameterFloat* stGain;
 
 
     // Distant Wind Parameter
@@ -204,11 +206,7 @@ private:
     
     // Stereo Component
     PinkNoise stereoPnL1;
-    PinkNoise stereoPnL2;
-    PinkNoise stereoPnL3;
     PinkNoise stereoPnR1;
-    PinkNoise stereoPnR2;
-    PinkNoise stereoPnR3;
     juce::dsp::StateVariableTPTFilter<float> stLPF;
     juce::dsp::StateVariableTPTFilter<float> stHPF;
     juce::dsp::IIR::Filter<float> stPeakF;

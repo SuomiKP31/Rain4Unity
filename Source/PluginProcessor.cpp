@@ -64,6 +64,12 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
         "dstPan", "Distant Pan", 0.0f, 1.0f, 0.5f));
 }
 
+static void mixAvg(juce::AudioBuffer<float>& buf, int destChannel, int destSample, float sample)
+{
+	auto buf_reader = buf.getReadPointer(destChannel);
+    buf.setSample(destChannel, destSample, sample * 0.5f + buf_reader[destSample] * 0.5f);
+}
+
 Rain4UnityAudioProcessor::~Rain4UnityAudioProcessor()
 {
 }
@@ -92,10 +98,13 @@ void Rain4UnityAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 {
     juce::ScopedNoDenormals noDenormals;
     buffer.clear();
+    tempBuffer.setSize(buffer.getNumChannels(), buffer.getNumSamples()); // DO NOT RECREATE THIS BUFFER. Reuse it.
 
     updateSettings();
+
     midBoilProcess(buffer);
     lowBoilProcess(buffer);
+    
 
     buffer.applyGain(gain->get());
     
@@ -190,16 +199,21 @@ void Rain4UnityAudioProcessor::midBoilProcess(juce::AudioBuffer<float>& buffer)
 
 void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
 {
+    tempBuffer.clear();
+
     int numSamples = buffer.getNumSamples();
-    float FrameAmp = dstAmplitude->get();
 
     for (int s = 0; s < numSamples; ++s)
     {
-        float output = FrameAmp * (pr.nextFloat() * 2.0f - 1.0f);
+        float output = pr.nextFloat();
 
-        buffer.addSample(0, s, output);
-        buffer.addSample(1, s, output);
+        tempBuffer.addSample(0, s, output);
+        tempBuffer.addSample(1, s, output);
     }
+
+    tempBuffer.applyGain(0.2f);
+    buffer.addFrom(0, 0, tempBuffer, 0, 0, numSamples, 1);
+    buffer.addFrom(1, 0, tempBuffer, 1, 0, numSamples, 1);
 
 }
 
@@ -224,6 +238,8 @@ void Rain4UnityAudioProcessor::updateSettings()
 
     //lbRMOsc.setFrequency(currentLBRMFrequency);
     mbRngBPOsc.setFrequency(currentLBRngFrequency);
+
+
     
 }
 

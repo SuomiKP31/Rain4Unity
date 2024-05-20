@@ -156,6 +156,7 @@ private:
 
     //  Global Parameters
     juce::AudioParameterFloat* gain;
+    juce::AudioBuffer<float> tempBuffer; // For adjust component gains
 
     //  Mid-Boiling
     juce::AudioParameterFloat* mbBPCutoff;

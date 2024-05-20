@@ -50,25 +50,25 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     addParameter(mbRngBPOscAmplitude = new juce::AudioParameterFloat(
         "MBRNGFreqBand", "MBRng BPF Freq Band", 100.f, 500.f, 435.0f));
     addParameter(mbRngBPCenterFrequency = new juce::AudioParameterFloat(
-        "MBRNGCenterFreq", "MBRng BPF Center Freq", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 606.0f));
+        "MBRNGCenterFreq", "MBRng BPF Center Freq", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 706.0f));
     addParameter(mbRngBPOscFrequency = new juce::AudioParameterFloat(
         "MBRNGOscFrequency", "MBRng Osc Frequency", 1.f, 100.f, 2.0f));
     addParameter(mbRngBPQ = new juce::AudioParameterFloat(
         "MBRng Q", "MBRng BP QFactor", 0.1f, 15.f, 9.0f));
-    addParameter(dstAmplitude = new juce::AudioParameterFloat(
-        "DstAmp", "Mid Boiling Gain", 0.0001f, 1.5f, 0.75f));
+    addParameter(mbGain = new juce::AudioParameterFloat(
+        "DstAmp", "Mid Boiling Gain", 0.0001f, 1.5f, 0.35f));
 
     // Low Boiling
     addParameter(lbRngBPOscAmplitude = new juce::AudioParameterFloat(
-        "LBRNGFreqBand", "LBRng BPF Freq Band", 100.f, 500.f, 435.0f));
+        "LBRNGFreqBand", "LBRng BPF Freq Band", 100.f, 500.f, 480.0f));
     addParameter(lbRngBPCenterFrequency = new juce::AudioParameterFloat(
-        "LBRNGCenterFreq", "LBRng BPF Center Freq", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 606.0f));
+        "LBRNGCenterFreq", "LBRng BPF Center Freq", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 250.0f));
     addParameter(lbRngBPOscFrequency = new juce::AudioParameterFloat(
         "LBRNGOscFrequency", "LBRng Osc Frequency", 1.f, 100.f, 2.0f));
     addParameter(lbRngBPQ = new juce::AudioParameterFloat(
-        "LBRng Q", "LBRng BP QFactor", 0.1f, 15.f, 9.0f));
-    addParameter(lbAmplitude = new juce::AudioParameterFloat(
-        "lbAmp", "Low Boiling Gain", 0.0001f, 1.5f, 0.75f));
+        "LBRng Q", "LBRng BP QFactor", 0.1f, 15.f, 1.4f));
+    addParameter(lbGain = new juce::AudioParameterFloat(
+        "DstAmp", "Low Boiling Gain", 0.0001f, 1.5f, 0.35f));
     addParameter(lbLPFCutoff = new juce::AudioParameterFloat(
         "LBLPFCutoff", "LBLPF Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 3500.0f));
     addParameter(lbHPFCutoff = new juce::AudioParameterFloat(
@@ -149,7 +149,7 @@ void Rain4UnityAudioProcessor::Prepare(const juce::dsp::ProcessSpec& spec)
     mbRngBPF.prepare(spec);
     mbRngBPF.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
     mbRngBPF.setCutoffFrequency(1000.0f);
-    mbRngBPF.setResonance(60.0f);
+    mbRngBPF.setResonance(20.0f);
     mbRngBPF.reset();
 
     mbRngBPOsc.initialise([](float x) { return std::sin(x); }, 128);
@@ -167,6 +167,14 @@ void Rain4UnityAudioProcessor::Prepare(const juce::dsp::ProcessSpec& spec)
     lbHPF.setCutoffFrequency(3500.0f);
     lbHPF.setResonance(1.2f);
     lbHPF.reset();
+
+    lbRngBPF.prepare(spec);
+    lbRngBPF.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
+    lbRngBPF.setCutoffFrequency(1000.f);
+    lbRngBPF.setResonance(15.0f);
+    lbRngBPF.reset();
+
+    lbRngBPOsc.initialise([](float x) { return std::sin(x); }, 128);
     // The L/HPF here are attenuation filters which get rid of some of the more out-of-place frequencies.
 }
 
@@ -174,7 +182,7 @@ void Rain4UnityAudioProcessor::midBoilProcess(juce::AudioBuffer<float>& buffer)
 {
     //    Get Buffer info
     int numSamples = buffer.getNumSamples();
-    float FrameAmp = dstAmplitude->get();
+    float FrameAmp = mbGain->get();
 
     // Random Modulation - Volume following an LFO
     float randomModulationGain = mbRandomModulateAmplitude->get();
@@ -208,19 +216,25 @@ void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
 
     int numSamples = buffer.getNumSamples();
 
+    // 3rd random BPF
+    float centerFreq = lbRngBPCenterFrequency->get();
+    float freqband = lbRngBPOscAmplitude->get();
+    lbRngBPF.setCutoffFrequency(std::clamp(lbRngBPOsc.processSample(r.nextFloat() * 2.0f - 1.0f) * freqband + centerFreq, 25.f, 20000.0f));
+
     for (int s = 0; s < numSamples; ++s)
     {
         float output = pr.nextFloat();
-
+        output = lbRngBPF.processSample(0, output);
         tempBuffer.addSample(0, s, output);
         tempBuffer.addSample(1, s, output);
     }
 
-    tempBuffer.applyGain(0.2f);
+    tempBuffer.applyGain(lbGain->get());
 
     buffer.addFrom(0, 0, tempBuffer, 0, 0, numSamples, 1);
     buffer.addFrom(1, 0, tempBuffer, 1, 0, numSamples, 1);
 
+    // Filter the two boiling parts here
     for (int s = 0; s < numSamples; ++s)
     {
         float output = lbLPF.processSample(0, buffer.getSample(0, s));
@@ -232,7 +246,9 @@ void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
         buffer.setSample(1, s, output);
     }
 
-
+    lbLPF.snapToZero();
+    lbHPF.snapToZero();
+    lbRngBPF.snapToZero();
 }
 
 void Rain4UnityAudioProcessor::updateSettings()
@@ -247,6 +263,7 @@ void Rain4UnityAudioProcessor::updateSettings()
     float currentLBLPFCutoff = lbLPFCutoff->get();
     float currentLBHPFCutoff = lbHPFCutoff->get();
     float currentLBRngFrequency = lbRngBPOscFrequency->get();
+    float currentLBBPQ = lbRngBPQ->get();
 
     // Update DST Filter Settings
     mbBPF.setCutoffFrequency(currentMBCutoff);
@@ -257,6 +274,7 @@ void Rain4UnityAudioProcessor::updateSettings()
     lbLPF.setCutoffFrequency(currentLBLPFCutoff);
     lbHPF.setCutoffFrequency(currentLBHPFCutoff);
     lbRngBPOsc.setFrequency(currentLBRngFrequency);
+    lbRngBPF.setResonance(currentLBBPQ);
 
 
     

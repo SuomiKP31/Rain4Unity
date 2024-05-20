@@ -168,19 +168,18 @@ private:
     juce::AudioParameterFloat* mbRngBPOscAmplitude;
     juce::AudioParameterFloat* mbRngBPCenterFrequency;
     juce::AudioParameterFloat* mbRngBPQ;
-
+    juce::AudioParameterFloat* mbGain;
 
     // Low-Boiling
     juce::AudioParameterFloat* lbRngBPOscFrequency;
     juce::AudioParameterFloat* lbRngBPOscAmplitude;
     juce::AudioParameterFloat* lbRngBPCenterFrequency;
     juce::AudioParameterFloat* lbRngBPQ;
-    juce::AudioParameterFloat* lbAmplitude;
     juce::AudioParameterFloat* lbLPFCutoff;
     juce::AudioParameterFloat* lbHPFCutoff;
+    juce::AudioParameterFloat* lbGain;
 
-    // Distant Wind Parameters
-    juce::AudioParameterFloat* dstAmplitude;
+    // Distant Wind Parameter
     juce::AudioParameterFloat* dstPan;
 
 
@@ -194,6 +193,7 @@ private:
     juce::dsp::Oscillator<float> lbRngBPOsc;
     juce::dsp::StateVariableTPTFilter<float> lbLPF;
     juce::dsp::StateVariableTPTFilter<float> lbHPF;
+    juce::dsp::StateVariableTPTFilter<float> lbRngBPF;
     
 
 

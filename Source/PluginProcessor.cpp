@@ -186,9 +186,13 @@ void Rain4UnityAudioProcessor::Prepare(const juce::dsp::ProcessSpec& spec)
     // The L/HPF here are attenuation filters which get rid of some of the more out-of-place frequencies.
 
     // Stereo
-    stPeakF.prepare(spec);
-    stPeakF.coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(spec.sampleRate, 1000, 1.0f, 0);
-    stPeakF.reset();
+    stLPeakF.prepare(spec);
+    stLPeakF.coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(spec.sampleRate, 1000, 1.0f, 1);
+    stLPeakF.reset();
+
+    stRPeakF.prepare(spec);
+    stRPeakF.coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(spec.sampleRate, 1000, 1.0f, 1);
+    stRPeakF.reset();
 
     stLPF.prepare(spec);
     stLPF.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
@@ -279,7 +283,7 @@ void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
 void Rain4UnityAudioProcessor::stereoBoilProcess(juce::AudioBuffer<float>& buffer)
 {
     tempBuffer.clear();
-    float currentSTGain = stGain->get();
+    float currentSTGain = stGain->get() / 2.0f;
     int numSamples = buffer.getNumSamples();
 
     float panL1[2], panR1[2];
@@ -302,12 +306,13 @@ void Rain4UnityAudioProcessor::stereoBoilProcess(juce::AudioBuffer<float>& buffe
     }
 
     tempBuffer.applyGain(currentSTGain);
-    buffer.addFrom(0, 0, tempBuffer, 0, 0, numSamples, 1-currentSTGain);
-    buffer.addFrom(1, 0, tempBuffer, 1, 0, numSamples, 1-currentSTGain);
-
+    buffer.addFrom(0, 0, tempBuffer, 0, 0, numSamples, 1);
+    buffer.addFrom(1, 0, tempBuffer, 1, 0, numSamples, 1);
+    
     stLPF.snapToZero();
     stHPF.snapToZero();
-    stPeakF.snapToZero();
+    stLPeakF.snapToZero();
+    stRPeakF.snapToZero();
 }
 
 
@@ -342,7 +347,8 @@ void Rain4UnityAudioProcessor::updateSettings()
 
     stLPF.setCutoffFrequency(currentSTLPFCutoff);
     stHPF.setCutoffFrequency(currentSTHPFCutoff);
-    stPeakF.coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), currentSTPeakFreq, 1, 1);
+    stLPeakF.coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), currentSTPeakFreq, 1, 1.25f);
+    stRPeakF.coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(), currentSTPeakFreq, 1, 1.25f);
     
 }
 
@@ -354,7 +360,7 @@ void Rain4UnityAudioProcessor::cosPan(float* output, float pan)
 
 void Rain4UnityAudioProcessor::stProcessSample(int channel, float& sample)
 {
-    sample = stPeakF.processSample(sample);
+    sample = channel == 0 ? stLPeakF.processSample(sample) : stRPeakF.processSample(sample);
     sample = stLPF.processSample(channel, sample);
     sample = stHPF.processSample(channel, sample);
 }

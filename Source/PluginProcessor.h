@@ -209,7 +209,8 @@ private:
     PinkNoise stereoPnR1;
     juce::dsp::StateVariableTPTFilter<float> stLPF;
     juce::dsp::StateVariableTPTFilter<float> stHPF;
-    juce::dsp::IIR::Filter<float> stPeakF;
+    juce::dsp::IIR::Filter<float> stLPeakF;
+    juce::dsp::IIR::Filter<float> stRPeakF;
 
     //  Internal Variables
     juce::dsp::ProcessSpec currentSpec;

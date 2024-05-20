@@ -171,6 +171,13 @@ private:
 
 
     // Low-Boiling
+    juce::AudioParameterFloat* lbRngBPOscFrequency;
+    juce::AudioParameterFloat* lbRngBPOscAmplitude;
+    juce::AudioParameterFloat* lbRngBPCenterFrequency;
+    juce::AudioParameterFloat* lbRngBPQ;
+    juce::AudioParameterFloat* lbAmplitude;
+    juce::AudioParameterFloat* lbLPFCutoff;
+    juce::AudioParameterFloat* lbHPFCutoff;
 
     // Distant Wind Parameters
     juce::AudioParameterFloat* dstAmplitude;
@@ -183,18 +190,12 @@ private:
     juce::dsp::StateVariableTPTFilter<float> mbBPF;
     juce::dsp::StateVariableTPTFilter<float> mbRngBPF;
     juce::dsp::Oscillator<float> mbRngBPOsc;
-    juce::dsp::Oscillator<float> lbLFO;
 
-    // Whistle DSP Resources
+    juce::dsp::Oscillator<float> lbRngBPOsc;
+    juce::dsp::StateVariableTPTFilter<float> lbLPF;
+    juce::dsp::StateVariableTPTFilter<float> lbHPF;
     
-    juce::dsp::StateVariableTPTFilter<float> whsBPF2;
 
-    // Howl DSP Resources
-    juce::dsp::StateVariableTPTFilter<float> howlBPF1;
-    juce::dsp::StateVariableTPTFilter<float> howlBPF2;
-    
-    BlockLPF howlBlockLPF1;
-    BlockLPF howlBlockLPF2;
 
     //  Internal Variables
     juce::dsp::ProcessSpec currentSpec;

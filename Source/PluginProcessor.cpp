@@ -42,24 +42,38 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
         "Master Gain", "Master Gain", 0.0f, 1.0f, 0.5f));
     //    Mid Boiling
     addParameter(mbBPCutoff = new juce::AudioParameterFloat(
-        "MBCutOff", "MB Bandpass Cutoff", 15.f, 10000.f, 2341.0f));
+        "MBCutOff", "MB Bandpass Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 2341.0f));
     addParameter(mbBPQ = new juce::AudioParameterFloat(
         "MBQ", "MB Bandpass QFactor", 0.1f, 15.f, 2.4f));
     addParameter(mbRandomModulateAmplitude = new juce::AudioParameterFloat(
         "MBRM Amp", "MBRM Amp(dB)", 0.f, 24.f, 9.0f));
-    
-
     addParameter(mbRngBPOscAmplitude = new juce::AudioParameterFloat(
-        "MBRNGFreqBand", "MBRNG BPF Freq Band", 100.f, 500.f, 435.0f));
+        "MBRNGFreqBand", "MBRng BPF Freq Band", 100.f, 500.f, 435.0f));
     addParameter(mbRngBPCenterFrequency = new juce::AudioParameterFloat(
-        "MBRNGCenterFreq", "MBRNG BPF Center Freq", 15.f, 10000.f, 606.0f));
+        "MBRNGCenterFreq", "MBRng BPF Center Freq", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 606.0f));
     addParameter(mbRngBPOscFrequency = new juce::AudioParameterFloat(
-        "MBRNGOscFrequency", "MBRNG Osc Frequency", 1.f, 100.f, 2.0f));
+        "MBRNGOscFrequency", "MBRng Osc Frequency", 1.f, 100.f, 2.0f));
     addParameter(mbRngBPQ = new juce::AudioParameterFloat(
-        "MBRng Q", "MB RngBP QFactor", 0.1f, 15.f, 9.0f));
-
+        "MBRng Q", "MBRng BP QFactor", 0.1f, 15.f, 9.0f));
     addParameter(dstAmplitude = new juce::AudioParameterFloat(
-        "DstAmp", "Distant Gain", 0.0001f, 1.5f, 0.75f));
+        "DstAmp", "Mid Boiling Gain", 0.0001f, 1.5f, 0.75f));
+
+    // Low Boiling
+    addParameter(lbRngBPOscAmplitude = new juce::AudioParameterFloat(
+        "LBRNGFreqBand", "LBRng BPF Freq Band", 100.f, 500.f, 435.0f));
+    addParameter(lbRngBPCenterFrequency = new juce::AudioParameterFloat(
+        "LBRNGCenterFreq", "LBRng BPF Center Freq", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 606.0f));
+    addParameter(lbRngBPOscFrequency = new juce::AudioParameterFloat(
+        "LBRNGOscFrequency", "LBRng Osc Frequency", 1.f, 100.f, 2.0f));
+    addParameter(lbRngBPQ = new juce::AudioParameterFloat(
+        "LBRng Q", "LBRng BP QFactor", 0.1f, 15.f, 9.0f));
+    addParameter(lbAmplitude = new juce::AudioParameterFloat(
+        "lbAmp", "Low Boiling Gain", 0.0001f, 1.5f, 0.75f));
+    addParameter(lbLPFCutoff = new juce::AudioParameterFloat(
+        "LBLPFCutoff", "LBLPF Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 3500.0f));
+    addParameter(lbHPFCutoff = new juce::AudioParameterFloat(
+        "LBHPFCutoff", "LBHPF Cutoff", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 400.0f));
+
     addParameter(dstPan = new juce::AudioParameterFloat(
         "dstPan", "Distant Pan", 0.0f, 1.0f, 0.5f));
 }
@@ -125,7 +139,7 @@ juce::AudioProcessorEditor* Rain4UnityAudioProcessor::createEditor()
 
 void Rain4UnityAudioProcessor::Prepare(const juce::dsp::ProcessSpec& spec)
 {
-    //    Prepare DST
+    //    Mid-Boiling
     mbBPF.prepare(spec);
     mbBPF.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
     mbBPF.setCutoffFrequency(10.0f);
@@ -140,29 +154,20 @@ void Rain4UnityAudioProcessor::Prepare(const juce::dsp::ProcessSpec& spec)
 
     mbRngBPOsc.initialise([](float x) { return std::sin(x); }, 128);
 
-    whsBPF2.prepare(spec);
-    whsBPF2.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
-    whsBPF2.setCutoffFrequency(1000.0f);
-    whsBPF2.setResonance(60.0f);
-    whsBPF2.reset();
 
-    //    Prepare Howl
-    howlBPF1.prepare(spec);
-    howlBPF1.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
-    howlBPF1.setCutoffFrequency(400.0f);
-    howlBPF1.setResonance(40.0f);
-    howlBPF1.reset();
+    //  Low-Boiling
+    lbLPF.prepare(spec);
+    lbLPF.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
+    lbLPF.setCutoffFrequency(400.f);
+    lbLPF.setResonance(0.5f);
+    lbLPF.reset();
 
-    howlBPF2.prepare(spec);
-    howlBPF2.setType(juce::dsp::StateVariableTPTFilterType::bandpass);
-    howlBPF2.setCutoffFrequency(200.0f);
-    howlBPF2.setResonance(40.0f);
-    howlBPF2.reset();
-
-
-
-    howlBlockLPF1.prepare(0.5f, spec.maximumBlockSize, spec.sampleRate);
-    howlBlockLPF2.prepare(0.4f, spec.maximumBlockSize, spec.sampleRate);
+    lbHPF.prepare(spec);
+    lbHPF.setType(juce::dsp::StateVariableTPTFilterType::highpass);
+    lbHPF.setCutoffFrequency(3500.0f);
+    lbHPF.setResonance(1.2f);
+    lbHPF.reset();
+    // The L/HPF here are attenuation filters which get rid of some of the more out-of-place frequencies.
 }
 
 void Rain4UnityAudioProcessor::midBoilProcess(juce::AudioBuffer<float>& buffer)
@@ -212,8 +217,21 @@ void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
     }
 
     tempBuffer.applyGain(0.2f);
+
     buffer.addFrom(0, 0, tempBuffer, 0, 0, numSamples, 1);
     buffer.addFrom(1, 0, tempBuffer, 1, 0, numSamples, 1);
+
+    for (int s = 0; s < numSamples; ++s)
+    {
+        float output = lbLPF.processSample(0, buffer.getSample(0, s));
+        output = lbHPF.processSample(0, output);
+        buffer.setSample(0, s, output);
+
+        output = lbLPF.processSample(1, buffer.getSample(1, s));
+        output = lbHPF.processSample(1, output);
+        buffer.setSample(1, s, output);
+    }
+
 
 }
 
@@ -221,23 +239,24 @@ void Rain4UnityAudioProcessor::updateSettings()
 {
     //  UpdateWSCircularBuffer;
 
-    float currentLBCutoff = mbBPCutoff->get();
+    float currentMBCutoff = mbBPCutoff->get();
     float currentDstResonance = mbBPQ->get();
-    //float currentLBRMFrequency = mbRandomModulateFrequency->get();
-    float currentLBRngFrequency = mbRngBPOscFrequency->get();
-    float currentLBRngQ = mbRngBPQ->get();
-    //gd.windSpeedCircularBuffer[gd.wSCBWriteIndex] = currentWindSpeed;
-    //++gd.wSCBWriteIndex;
-    //gd.wSCBWriteIndex = (gd.wSCBWriteIndex < wSCBSize) ? gd.wSCBWriteIndex : 0;
+    float currentMBRngFrequency = mbRngBPOscFrequency->get();
+    float currentMBRngQ = mbRngBPQ->get();
 
+    float currentLBLPFCutoff = lbLPFCutoff->get();
+    float currentLBHPFCutoff = lbHPFCutoff->get();
+    float currentLBRngFrequency = lbRngBPOscFrequency->get();
 
     // Update DST Filter Settings
-    mbBPF.setCutoffFrequency(currentLBCutoff);
+    mbBPF.setCutoffFrequency(currentMBCutoff);
     mbBPF.setResonance(currentDstResonance);
-    mbRngBPF.setResonance(currentLBRngQ);
+    mbRngBPF.setResonance(currentMBRngQ);
+    mbRngBPOsc.setFrequency(currentMBRngFrequency);
 
-    //lbRMOsc.setFrequency(currentLBRMFrequency);
-    mbRngBPOsc.setFrequency(currentLBRngFrequency);
+    lbLPF.setCutoffFrequency(currentLBLPFCutoff);
+    lbHPF.setCutoffFrequency(currentLBHPFCutoff);
+    lbRngBPOsc.setFrequency(currentLBRngFrequency);
 
 
     

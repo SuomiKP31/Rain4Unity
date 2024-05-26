@@ -90,7 +90,7 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
 
     // Drop
     addParameter(dropRetriggerTime = new juce::AudioParameterFloat(
-        "Drop Length", "Drop ReTrigger Time", 0.1f, 10.0f, 0.15f));
+        "Drop Length", "Drop ReTrigger Time", 0.1f, 0.3f, 0.15f));
     addParameter(dropFreqInterval = new juce::AudioParameterFloat(
         "Drop Freq Interval", "Drop Freq Coef", 0.f, 9.0f, 3.0f));
     addParameter(dropTimeInterval = new juce::AudioParameterFloat(

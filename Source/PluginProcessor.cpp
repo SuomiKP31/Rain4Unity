@@ -41,11 +41,11 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     addParameter(gain = new juce::AudioParameterFloat(
         "Master Gain", "Master Gain", 0.0f, 1.0f, 0.5f));
     addParameter(mbGain = new juce::AudioParameterFloat(
-        "MB Gain", "Mid Boiling Gain", 0.0001f, 1.0f, 0.3f));
+        "MB Gain", "Mid Boiling Gain", 0.0001f, 1.0f, 0.01f));
     addParameter(lbGain = new juce::AudioParameterFloat(
-        "LB Gain", "Low Boiling Gain", 0.0001f, 1.0f, 0.45f));
+        "LB Gain", "Low Boiling Gain", 0.0001f, 1.0f, 0.03f));
     addParameter(stGain = new juce::AudioParameterFloat(
-        "Stereo Gain", "Stereo Gain", 0.0001f, 1.0f, 0.25f));
+        "Stereo Gain", "Stereo Gain", 0.0001f, 1.0f, 0.15f));
     addParameter(dropGain = new juce::AudioParameterFloat(
         "Drop Gain", "Drop Gain", 0.0001f, 1.0f, 0.6f));
 
@@ -82,19 +82,19 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
 
     // Stereo
     addParameter(stLPFCutoff = new juce::AudioParameterFloat(
-        "Stereo LPF", "StereoLPF", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 2750.0f));
+        "Stereo LPF", "StereoLPF", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 1675.0f));
     addParameter(stHPFCutoff = new juce::AudioParameterFloat(
-        "Stereo HPF", "StereoHPF", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 800.0f));
+        "Stereo HPF", "StereoHPF", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 875.0f));
     addParameter(stPeakFreq = new juce::AudioParameterFloat(
         "Stereo Peak", "Stereo Peak", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 1000.0f));
 
     // Drop
     addParameter(dropRetriggerTime = new juce::AudioParameterFloat(
-        "Drop Length", "Drop ReTrigger Time", 0.1f, 10.0f, 0.3f));
+        "Drop Length", "Drop ReTrigger Time", 0.1f, 10.0f, 0.15f));
     addParameter(dropFreqInterval = new juce::AudioParameterFloat(
-        "Drop Freq Interval", "Drop Freq Coef", 0.f, 9.0f, 2.5f));
+        "Drop Freq Interval", "Drop Freq Coef", 0.f, 9.0f, 3.0f));
     addParameter(dropTimeInterval = new juce::AudioParameterFloat(
-        "Drop Time Interval", "Drop Time Coef", 0.f, 9.0f, 4.5f));
+        "Drop Time Interval", "Drop Time Coef", 0.f, 9.0f, 6.0f));
 }
 
 static void mixAvg(juce::AudioBuffer<float>& buf, int destChannel, int destSample, float sample)

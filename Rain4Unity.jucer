@@ -11,6 +11,9 @@
             file="Source/PluginProcessor.cpp"/>
       <FILE id="b70Sn0" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
+      <FILE id="zm5Ado" name="RainDropWave.cpp" compile="1" resource="0"
+            file="Source/RainDropWave.cpp"/>
+      <FILE id="rW79hZ" name="RainDropWave.h" compile="0" resource="0" file="Source/RainDropWave.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>

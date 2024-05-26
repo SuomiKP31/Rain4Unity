@@ -40,13 +40,14 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     //    Global Parameters
     addParameter(gain = new juce::AudioParameterFloat(
         "Master Gain", "Master Gain", 0.0f, 1.0f, 0.5f));
-
     addParameter(mbGain = new juce::AudioParameterFloat(
         "MB Gain", "Mid Boiling Gain", 0.0001f, 1.0f, 0.3f));
     addParameter(lbGain = new juce::AudioParameterFloat(
         "LB Gain", "Low Boiling Gain", 0.0001f, 1.0f, 0.45f));
     addParameter(stGain = new juce::AudioParameterFloat(
         "Stereo Gain", "Stereo Gain", 0.0001f, 1.0f, 0.25f));
+    addParameter(dropGain = new juce::AudioParameterFloat(
+        "Drop Gain", "Drop Gain", 0.0001f, 1.0f, 0.6f));
 
     //    Mid Boiling
     addParameter(mbBPCutoff = new juce::AudioParameterFloat(
@@ -87,8 +88,13 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     addParameter(stPeakFreq = new juce::AudioParameterFloat(
         "Stereo Peak", "Stereo Peak", juce::NormalisableRange<float>(15.f, 10000.f, 1, 0.25), 1000.0f));
 
-    /*addParameter(dstPan = new juce::AudioParameterFloat(
-        "dstPan", "Distant Pan", 0.0f, 1.0f, 0.5f));*/
+    // Drop
+    addParameter(dropRetriggerTime = new juce::AudioParameterFloat(
+        "Drop Length", "Drop ReTrigger Time", 0.1f, 10.0f, 0.3f));
+    addParameter(dropFreqInterval = new juce::AudioParameterFloat(
+        "Drop Freq Interval", "Drop Freq Coef", 0.f, 9.0f, 2.5f));
+    addParameter(dropTimeInterval = new juce::AudioParameterFloat(
+        "Drop Time Interval", "Drop Time Coef", 0.f, 9.0f, 4.5f));
 }
 
 static void mixAvg(juce::AudioBuffer<float>& buf, int destChannel, int destSample, float sample)
@@ -132,6 +138,7 @@ void Rain4UnityAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     midBoilProcess(buffer);
     lowBoilProcess(buffer);
     stereoBoilProcess(buffer);
+    dropProcess(buffer);
 
     buffer.applyGain(gain->get());
     
@@ -210,6 +217,9 @@ void Rain4UnityAudioProcessor::Prepare(const juce::dsp::ProcessSpec& spec)
     stHPF.setCutoffFrequency(2750.f);
     stHPF.setResonance(0.8f);
     stHPF.reset();
+
+    // Drop
+    dropWave.set_spec(spec);
 }
 
 void Rain4UnityAudioProcessor::midBoilProcess(juce::AudioBuffer<float>& buffer)
@@ -223,7 +233,7 @@ void Rain4UnityAudioProcessor::midBoilProcess(juce::AudioBuffer<float>& buffer)
     randomModulationGain *= r.nextFloat() * 2.0f - 1.0f;
     randomModulationGain = juce::Decibels::decibelsToGain(randomModulationGain);
 
-    // 2nd random BPF
+    // random BPF
     float centerFreq = mbRngBPCenterFrequency->get();
     float freqband = mbRngBPOscAmplitude->get();
     mbRngBPF.setCutoffFrequency(std::clamp(mbRngBPOsc.processSample(r.nextFloat() * 2.0f - 1.0f) * freqband + centerFreq, 25.f, 20000.0f));
@@ -250,7 +260,7 @@ void Rain4UnityAudioProcessor::lowBoilProcess(juce::AudioBuffer<float>& buffer)
 
     int numSamples = buffer.getNumSamples();
 
-    // 3rd random BPF
+    // random BPF
     float centerFreq = lbRngBPCenterFrequency->get();
     float freqband = lbRngBPOscAmplitude->get();
     lbRngBPF.setCutoffFrequency(std::clamp(lbRngBPOsc.processSample(r.nextFloat() * 2.0f - 1.0f) * freqband + centerFreq, 25.f, 20000.0f));
@@ -298,8 +308,7 @@ void Rain4UnityAudioProcessor::stereoBoilProcess(juce::AudioBuffer<float>& buffe
     cosPan(panL1, 0.f);
     cosPan(panR1, 1.0f);
 
-    // Stereo Pink noises & Filtering (3 Layers)
-    // NOTE: Multiple layers are a bit overkill. I can't make out any difference so I just left one pink noise generator.
+    // Stereo Pink noises & Filtering (2 Layers)
     for (int s = 0; s < numSamples; ++s)
     {
         outputL1 = stereoPnL1.nextFloat();
@@ -320,6 +329,34 @@ void Rain4UnityAudioProcessor::stereoBoilProcess(juce::AudioBuffer<float>& buffe
     stRPeakF.snapToZero();
 }
 
+void Rain4UnityAudioProcessor::dropProcess(juce::AudioBuffer<float>& buffer)
+{
+    int numSamples = buffer.getNumSamples();
+	// Trigger
+    if(dropWave.finished() && r.nextFloat() > 0.9f)
+    {
+        dropWave.reset(dropRetriggerTime->get(), dropTimeInterval->get(), dropFreqInterval->get());
+    }
+    // Process
+    tempBuffer.clear();
+    // a. Pan
+    float pan[2];
+    cosPan(pan, dropWave.pan);
+    // b. Generate Sample from Wave
+    float output;
+    for (int s = 0; s < numSamples; ++s)
+    {
+        output = dropWave.GetNext();
+        tempBuffer.setSample(0, s, output * pan[0]);
+        tempBuffer.setSample(1, s, output * pan[1]);
+    }
+
+    tempBuffer.applyGain(dropGain->get());
+
+    buffer.addFrom(0, 0, tempBuffer, 0, 0, numSamples, 1);
+    buffer.addFrom(1, 0, tempBuffer, 1, 0, numSamples, 1);
+
+}
 
 void Rain4UnityAudioProcessor::updateSettings()
 {

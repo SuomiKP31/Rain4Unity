@@ -32,41 +32,9 @@
 
 #include <JuceHeader.h>
 #include "PinkNoise.h"
+#include "RainDropWave.h"
 
 //==============================================================================
-/**
- A Single pole low pass filter
-*/
-class BlockLPF
-{
-public:
-    BlockLPF()
-    {
-    }
-    
-    ~BlockLPF()
-    {
-    }
-
-    void prepare(float cutoff, int samplesPerBlock, double sampleRate)
-    {
-        float c0 = std::tan(juce::MathConstants<double>::pi * cutoff / (sampleRate / samplesPerBlock));
-        coeff = c0 / (1 + c0);
-    }
-
-    float processSample(float input)
-    {
-        lastOutput = (1.0f - coeff) * lastOutput + coeff * input;
-        lastOutput = lastOutput < 0.00001f ? 0.0f : lastOutput;
-        return lastOutput;
-    }
-
-private:
-
-    float coeff;
-    float lastOutput;
-
-};
 
 class Rain4UnityAudioProcessor  : public juce::AudioProcessor
 {
@@ -115,35 +83,6 @@ public:
     static const int numOutputChannels = 2;
     static const int maxPanFrames = 20;
 
-    struct GlobalData
-    {
-        float windSpeedCircularBuffer[wSCBSize];
-        int wSCBWriteIndex{ 0 };
-    };
-
-    struct WhistleData
-    {
-        int whsWSCBReadIndex1 = wSCBSize - 6;
-        int whsWSCBReadIndex2 = wSCBSize - 16;
-        float whsWindSpeed1;
-        float whsWindSpeed2;
-    };
-
-    struct HowlData
-    {
-        int howlWSCBReadIndex1 = wSCBSize - 6;
-        int howlWSCBReadIndex2 = wSCBSize - 51;
-        float howlWindSpeed1;
-        float howlWindSpeed2;
-    };
-
-    struct PanData
-    {
-        float whistlePan1;
-        float whistlePan2;
-        float howlPan1;
-        float howlPan2;
-    };
 
 private:
 
@@ -152,6 +91,7 @@ private:
     void midBoilProcess(juce::AudioBuffer<float>& buffer);
     void lowBoilProcess(juce::AudioBuffer<float>& buffer);
     void stereoBoilProcess(juce::AudioBuffer<float>& buffer);
+    void dropProcess(juce::AudioBuffer<float>& buffer);
     void updateSettings();
     void cosPan(float* output, float pan);
     void stProcessSample(int channel, float& sample);
@@ -187,9 +127,11 @@ private:
     juce::AudioParameterFloat* stPeakFreq;
     juce::AudioParameterFloat* stGain;
 
-
-    // Distant Wind Parameter
-    juce::AudioParameterFloat* dstPan;
+    // Drop Component
+    juce::AudioParameterFloat* dropGain;
+    juce::AudioParameterFloat* dropRetriggerTime;
+    juce::AudioParameterFloat* dropFreqInterval;
+    juce::AudioParameterFloat* dropTimeInterval;
 
 
     //  Boiling Component
@@ -212,11 +154,11 @@ private:
     juce::dsp::IIR::Filter<float> stLPeakF;
     juce::dsp::IIR::Filter<float> stRPeakF;
 
+    // Drop Component
+    RainDropWave dropWave;
+
     //  Internal Variables
     juce::dsp::ProcessSpec currentSpec;
-
-    GlobalData gd;
-    PanData pd;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Rain4UnityAudioProcessor)

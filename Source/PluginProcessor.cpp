@@ -55,7 +55,7 @@ Rain4UnityAudioProcessor::Rain4UnityAudioProcessor()
     addParameter(mbBPQ = new juce::AudioParameterFloat(
         "MBQ", "MB Bandpass QFactor", 0.1f, 15.f, 2.75f));
     addParameter(mbRandomModulateAmplitude = new juce::AudioParameterFloat(
-        "MBRM Amp", "MBRM Amp(dB)", 0.1f, 8.f, 7.0f));
+        "MBRM Amp", "MBRM Amp(dB)", 0.f, 9.f, 7.0f));
     addParameter(mbRngBPOscAmplitude = new juce::AudioParameterFloat(
         "MBRNGFreqBand", "MBRng BPF Freq Band", 100.f, 500.f, 365.0f));
     addParameter(mbRngBPCenterFrequency = new juce::AudioParameterFloat(

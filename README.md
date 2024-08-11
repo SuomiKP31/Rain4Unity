@@ -14,3 +14,6 @@ It was tested in VS2022.
 Mostly I composed the noises following the components from this (blog)[https://blog.audiokinetic.com/fr/generating-rain-with-pure-synthesis/].
 The raindrop part is an improved version of Shaokang Li's (raindrop generator)[raindrop generator].
 Overall, I like it. I listen to it when I sleep.
+
+# Demo
+A (demo)[www.youtube.com/watch?v=s63pR9gFAVI] showcasing the plugin with Unity Integration.

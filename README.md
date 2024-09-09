@@ -12,7 +12,7 @@ It was tested in VS2022.
 # Reference
 
 Mostly I composed the noises following the components from this [Blog](https://blog.audiokinetic.com/fr/generating-rain-with-pure-synthesis/).
-The raindrop part is an improved version of Shaokang Li's (raindrop generator)[raindrop generator].
+The raindrop part is an improved version of Shaokang Li's [raindrop generator](https://github.com/747745124/Raindrop-Generator).
 Overall, I like it. I listen to it when I sleep.
 
 # Demo

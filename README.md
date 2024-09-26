@@ -9,6 +9,9 @@ Use Projucer to load the .jucer file.
 
 It was tested in VS2022.
 
+This can also be compiled to be used as a Unity Native Plugin. This functionality is provided by JUCE.
+You probably need to write your own wrappers for the APIs if you wish to use this plugin in gameplay.
+
 # Reference
 
 Mostly I composed the noises following the components from this [Blog](https://blog.audiokinetic.com/fr/generating-rain-with-pure-synthesis/).
